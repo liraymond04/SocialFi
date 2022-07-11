@@ -22,6 +22,7 @@ import omit from '@lib/omit'
 import splitSignature from '@lib/splitSignature'
 import uploadAssetsToIPFS from '@lib/uploadAssetsToIPFS'
 import uploadToIPFS from '@lib/uploadToIPFS'
+import { size } from 'cypress/types/lodash'
 import { NextPage } from 'next'
 import React, { ChangeEvent, useState } from 'react'
 import toast from 'react-hot-toast'
@@ -40,6 +41,7 @@ import { v4 as uuid } from 'uuid'
 import { useContractWrite, useSignTypedData } from 'wagmi'
 import { object, string } from 'zod'
 
+
 const newHourSchema = object({
   // orgName: string()
   //   .min(2, { message: 'Name should be at least 2 characters' })
@@ -51,7 +53,7 @@ const newHourSchema = object({
   startDate: string()
     .max(10, { message: 'Invalid date' })
     .min(10, { message: 'Invalid date' }),
-    
+
   endDate: string()
     .max(10, { message: 'Invalid date' })
     .min(10, { message: 'Invalid date' }),
@@ -68,12 +70,15 @@ const newHourSchema = object({
     .nullable()
 })
 
+
+
 const Hours: NextPage = () => {
   const [cover, setCover] = useState<string>()
   const [coverType, setCoverType] = useState<string>()
   const [isUploading, setIsUploading] = useState<boolean>(false)
   const [uploading, setUploading] = useState<boolean>(false)
   const [postContentError, setPostContentError] = useState<string>('')
+  const [singleDay, setSingleDay] = useState<boolean>(true)
   const { userSigNonce, setUserSigNonce } = useAppStore()
   const { isAuthenticated, currentUser } = useAppPersistStore()
   const { persistedPublication, setPersistedPublication } =
@@ -301,6 +306,22 @@ const Hours: NextPage = () => {
                 placeholder={'0x3A5bd...5e3'}
                 {...form.register('orgWalletAddress')}
               />
+            {/* <Input
+              label="Volunteer Duration"
+              type="radio"
+            /> */}
+            
+            <div onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              if(e.target.value === "Single Day"){
+                setSingleDay(true)
+              } else {
+                setSingleDay(false)
+              }
+            }}>
+            <h2>Volunteer Duration</h2>
+            <input type="radio" value="Single Day" name="dayOption"/> <label style={{fontSize: '14px'}}>Single Day</label>
+            <input type="radio" value="Multiple Days" name="dayOption" style={{marginLeft: '30px'}}/> <label style={{fontSize: '14px'}}>Multiple Days</label>
+            </div>
 
               <Input
                 label="Start Date"
@@ -309,12 +330,17 @@ const Hours: NextPage = () => {
                 {...form.register('startDate')}
               />
 
-              <Input
+              
+              {
+                singleDay === false && <Input
                 label="End Date"
                 type="date"
                 placeholder={'Enter your end date'}
                 {...form.register('endDate')}
               />
+
+              }
+              
 
               {/* <Input
                 label="Funds recipient"
