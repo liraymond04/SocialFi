@@ -27,7 +27,7 @@ const Hours: FC<Props> = ({ post }) => {
   const cover = post?.metadata?.cover?.original?.url
 
   return (
-    <Card forceRounded testId="fundraise">
+    <Card forceRounded testId="hours">
       <div
         className="h-40 rounded-t-xl border-b sm:h-52 dark:border-b-gray-700/80"
         style={{
@@ -48,7 +48,7 @@ const Hours: FC<Props> = ({ post }) => {
         <div className="text-xl font-bold">
           {' '}
           VHR Submission for {post.metadata.name},{' '}
-          {post.metadata.attributes[2].value}{' '}
+          {`${post.metadata.attributes[2].value} to ${post.metadata.attributes[3].value}`}
         </div>
 
         <br></br>
@@ -66,7 +66,7 @@ const Hours: FC<Props> = ({ post }) => {
                 <div>Total Minutes</div>
               </div>
             }
-            value={post.metadata.attributes[3].value}
+            value={post.metadata.attributes[4].value}
           />
         </div>
       </div>
