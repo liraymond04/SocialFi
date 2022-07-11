@@ -14,6 +14,15 @@ import React, { FC, useState } from 'react'
 import { Column, useTable } from 'react-table'
 import { useAppPersistStore } from 'src/store/app'
 
+// const GET_COLLECTED_MODULES = gql`
+//   query MyQuery {
+//     whoCollectedPublication(request: $request) {
+//       items {
+//         address
+//       }
+//   }
+// `
+
 const PROFILE_FEED_QUERY = gql`
   query ProfileFeed(
     $request: PublicationsQueryRequest!
@@ -50,8 +59,10 @@ interface Props {
 interface Data {
   orgID: string
   description: string
-  date: string
+  startDate: string
+  endDate: string
   totalMinutes: number
+  verified: boolean
 }
 
 const columns: Column<any>[] = [
@@ -64,18 +75,30 @@ const columns: Column<any>[] = [
     accessor: 'description'
   },
   {
-    Header: 'Date',
-    accessor: 'date'
+    Header: 'Start Date',
+    accessor: 'startDate'
+  },
+  {
+    Header: 'End Date',
+    accessor: 'endDate'
   },
   {
     Header: 'Total Minutes',
     accessor: 'totalMinutes'
   }
+  // {
+  //   Header: 'Status',
+  //   accessor: 'verified'
+  // }
 ]
 
 const HourFeed: FC<Props> = ({ profile }) => {
   const { currentUser } = useAppPersistStore()
   const [tableData, setTableData] = useState<Data[]>([])
+  // const {data, loading, error} = useQuery(GET_PROFILE) {
+  //   variables: {
+  //     request: { publicationId: "0x33a2-0x13"}
+  // }
   const { data, loading, error } = useQuery(PROFILE_FEED_QUERY, {
     variables: {
       request: { publicationTypes: 'POST', profileId: profile?.id, limit: 10 },
@@ -88,12 +111,20 @@ const HourFeed: FC<Props> = ({ profile }) => {
       const hours = data?.publications?.items.filter((i: any) => {
         return i.metadata.attributes[0].value == 'hours'
       })
+      // var verified = 'False'
       const result: Data[] = hours.map((i: any) => {
+        // if (i.metadata.attributes[3].value == 60) {
+        //   verified = 'True'
+        // }
+        console.log('This is the metadata')
+        console.log(i)
         return {
           orgID: i.metadata.name,
           description: i.metadata.description,
-          date: i.metadata.attributes[2].value,
-          totalMinutes: i.metadata.attributes[3].value
+          startDate: i.metadata.attributes[2].value,
+          endDate: i.metadata.attributes[3].value,
+          totalMinutes: i.metadata.attributes[4].value
+          // verified: verified
         }
       })
       setTableData(result)
@@ -101,7 +132,6 @@ const HourFeed: FC<Props> = ({ profile }) => {
   })
 
   const table = useTable({ columns, data: tableData })
-
   return (
     <>
       {loading && <PostsShimmer />}
