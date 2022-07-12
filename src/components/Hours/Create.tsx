@@ -224,7 +224,7 @@ const Hours: NextPage = () => {
         {
           traitType: 'string',
           key: 'endDate',
-          value: endDate
+          value: (singleDay ? startDate : endDate)
         },
         {
           traitType: 'number',
@@ -313,6 +313,7 @@ const Hours: NextPage = () => {
                     placeholder={'BCharity'}
                     value={value}
                     onChange={onChange}
+                    onAdd={() => {}}
                   />
                 )}
               />
@@ -326,24 +327,25 @@ const Hours: NextPage = () => {
               label="Volunteer Duration"
               type="radio"
             /> */}
-            
-            <div onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              if(e.target.value === "Single Day"){
-                setSingleDay(true)
-              } else {
-                setSingleDay(false)
-              }
-            }}>
-            <h2>Volunteer Duration</h2>
-            <input type="radio" value="Single Day" name="dayOption"/> <label style={{fontSize: '14px'}}>Single Day</label>
-            <input type="radio" value="Multiple Days" name="dayOption" style={{marginLeft: '30px'}}/> <label style={{fontSize: '14px'}}>Multiple Days</label>
-            </div>
 
               <Input
                 label="Start Date"
-                type="date"
+                type="startDate"
                 placeholder={'Enter your start date'}
+                change={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  if(singleDay === true){
+                    setSingleDay(false)
+                  } else {
+                    setSingleDay(true)
+                  }
+                  const startDate = form.getValues('startDate')
+                  const endDate = form.getValues('endDate')
+                  if(endDate === '') form.setValue('endDate', startDate)
+                  console.log('1')
+                }}
+
                 {...form.register('startDate')}
+
               />
 
               

@@ -12,6 +12,7 @@ interface Props extends Omit<ComponentProps<'input'>, 'prefix'> {
   className?: string
   helper?: ReactNode
   error?: boolean
+  change?: Function
 }
 
 export const Input = forwardRef<HTMLInputElement, Props>(function Input(
@@ -27,6 +28,16 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
           <div className="font-medium text-gray-800 dark:text-gray-200">
             {label}
           </div>
+          {
+            type==="startDate" && 
+            <div onChange={() => {
+              if(!props.change) return 
+              props.change()
+
+            }}>
+            <input type="checkbox" value="Multiple Days" name="dayOption" style={{marginLeft: '30px'}}/> <label style={{fontSize: '14px'}}>Multiple Days</label>
+            </div>
+          }
           <HelpTooltip content={helper} />
         </div>
       )}
@@ -45,8 +56,13 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
             'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700/80 focus:border-brand-500 focus:ring-brand-400 disabled:opacity-60 disabled:bg-gray-500 disabled:bg-opacity-20 outline-none w-full',
             className
           )}
-          type={type}
+          type={type === "startDate" ? "date" : type}
           ref={ref}
+          // onChange={(e) => {
+          //   console.log(e)
+          //   if(!props.inputChange) return;
+          //   props.inputChange()
+          // }}
           {...props}
         />
       </div>
