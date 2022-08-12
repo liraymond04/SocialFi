@@ -25,6 +25,7 @@ import Details from './Details'
 import FeedType from './FeedType'
 import FundraiseFeed from './FundraiseFeed'
 import FundraiseOrgFeed from './FundraiseOrgFeed'
+import FundraiseOrgGoodFeed from './FundraiseOrgGoodFeed'
 import HourFeed from './HourFeed'
 import OpportunitiesFeed from './OpportunitiesFeed'
 import OpportunitiesOrgFeed from './OpportunitiesOrgFeed'
@@ -188,6 +189,9 @@ const ViewProfile: NextPage = () => {
               {feedType === 'funds' && <FundraiseFeed profile={profile} />}
               {feedType === 'funds-org' && (
                 <FundraiseOrgFeed profile={profile} />
+              )}
+              {feedType === 'funds-org-good' && (
+                <FundraiseOrgGoodFeed profile={profile} />
               )}
             </GridItemEight>
           </>

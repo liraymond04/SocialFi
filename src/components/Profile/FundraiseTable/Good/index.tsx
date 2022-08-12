@@ -1,0 +1,283 @@
+/* eslint-disable react/jsx-key */
+import { DocumentNode, useQuery } from '@apollo/client'
+import PostsShimmer from '@components/Shared/Shimmer/PostsShimmer'
+import { Card } from '@components/UI/Card'
+import { EmptyState } from '@components/UI/EmptyState'
+import { ErrorMessage } from '@components/UI/ErrorMessage'
+import { Spinner } from '@components/UI/Spinner'
+import { BCharityPost } from '@generated/bcharitytypes'
+import { PaginatedResultInfo, Profile } from '@generated/types'
+import { CollectionIcon } from '@heroicons/react/outline'
+import Logger from '@lib/logger'
+import React, { FC, useState } from 'react'
+import { useInView } from 'react-cool-inview'
+import { useFilters, useTable } from 'react-table'
+import { useAppPersistStore } from 'src/store/app'
+
+import PublicationRevenue from '../PublicationRevenue'
+import GetComments from './GetComments'
+
+interface Props {
+  profile: Profile
+  handleQueryComplete: Function
+  getColumns: Function
+  query: DocumentNode
+  request: any
+}
+
+export interface Data {
+  orgName: string
+  name: string
+  category: string
+  funds: number
+  goal: string
+  date: string
+  postID: string
+}
+
+const FundraiseTable: FC<Props> = ({
+  profile,
+  handleQueryComplete,
+  getColumns,
+  query,
+  request
+}) => {
+  const { currentUser } = useAppPersistStore()
+  const [pageInfo, setPageInfo] = useState<PaginatedResultInfo>()
+  const [publications, setPublications] = useState<BCharityPost[]>([])
+  const [onEnter, setOnEnter] = useState<boolean>(false)
+  const [tableData, setTableData] = useState<Data[]>([])
+  const [pubIdData, setPubIdData] = useState<string[]>([])
+  const [addressData, setAddressData] = useState<string[]>([])
+  const [fundsData, setFundsData] = useState<number[]>([])
+
+  const fetchMetadata = async (contentURI: string) => {
+    return fetch(contentURI)
+      .then((response) => {
+        return response.json()
+      })
+      .then((responseJson) => {
+        return responseJson
+      })
+      .catch((error) => {
+        Logger.error(error)
+      })
+  }
+
+  const { data, loading, error, fetchMore } = useQuery(query, {
+    variables: {
+      request: request,
+      reactionRequest: currentUser ? { profileId: currentUser?.id } : null,
+      profileId: currentUser?.id ?? null
+    },
+    skip: !profile?.id,
+    fetchPolicy: 'no-cache',
+    onCompleted(data) {
+      if (onEnter) {
+        addressData.splice(0, addressData.length)
+        setAddressData(addressData)
+        setOnEnter(false)
+      }
+      const fundraisers = handleQueryComplete(data)
+      const pubId: string[] = [],
+        address: string[] = []
+      fundraisers.map((i: any) => {
+        pubId.push(i.id)
+        if (i.collectNftAddress) address.push(i.id)
+      })
+      setPubIdData([...pubIdData, ...pubId])
+      setAddressData([...addressData, ...address])
+      setOnEnter(true)
+    }
+  })
+  let a = 0
+  // console.log(pubIdData)
+  console.log(addressData)
+
+  const { observe } = useInView({
+    onEnter: async () => {
+      const req = {
+        ...request,
+        cursor: pageInfo?.next
+      }
+      const { data } = await fetchMore({
+        variables: {
+          request: req,
+          reactionRequest: currentUser ? { profileId: currentUser?.id } : null,
+          profileId: currentUser?.id ?? null
+        }
+      })
+      const fundraisers = handleQueryComplete(data)
+      const pubId: string[] = [],
+        address: string[] = []
+      fundraisers.map((i: any) => {
+        if (i.collectNftAddress) pubId.push(i.id)
+        if (i.collectNftAddress) address.push(i.collectNftAddress)
+      })
+      setPubIdData([...pubIdData, ...pubId])
+      setAddressData([...addressData, ...address])
+      setPageInfo(data?.publications?.pageInfo)
+      setPublications([...publications, ...data?.publications?.items])
+      Logger.log(
+        '[Query]',
+        `Fetched next 10 fundraise publications Next:${pageInfo?.next}`
+      )
+    }
+  })
+
+  const columns = getColumns()
+
+  const Table = () => {
+    const { getTableProps, getTableBodyProps, headerGroups, prepareRow, rows } =
+      useTable(
+        {
+          columns,
+          data: tableData
+        },
+        useFilters
+      )
+
+    return (
+      <table
+        className="w-full text-md text-center mb-2 mt-2"
+        {...getTableProps()}
+      >
+        <thead>
+          {headerGroups.map((headerGroup, index) => {
+            return index === 0 ? (
+              <tr>
+                <th
+                  className="p-4"
+                  {...headerGroup.headers[0].getHeaderProps()}
+                >
+                  {headerGroup.headers[0] &&
+                    headerGroup.headers[0].render('Header')}
+                </th>
+              </tr>
+            ) : (
+              <tr {...headerGroup.getHeaderGroupProps()}>
+                {headerGroup.headers.map((column) => (
+                  <th className="p-4" {...column.getHeaderProps()}>
+                    {column.render('Header')}
+                    <div>
+                      {column.canFilter ? column.render('Filter') : null}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            )
+          })}
+        </thead>
+        <tbody {...getTableBodyProps()}>
+          {rows.map((row, index) => {
+            prepareRow(row)
+            return (
+              <>
+                <tr {...row.getRowProps()}>
+                  {row.cells.map((cell) => {
+                    return (
+                      <td className="p-4" {...cell.getCellProps()}>
+                        {cell.render('Cell', { funds: fundsData })}
+                      </td>
+                    )
+                  })}
+                </tr>
+                <PublicationRevenue
+                  pubId={pubIdData[index]}
+                  callback={(data: any) => {
+                    if (fundsData[index] != data) {
+                      fundsData[index] = data
+                      setFundsData(fundsData)
+                      setTableData([...tableData])
+                    }
+                  }}
+                />
+              </>
+            )
+          })}
+        </tbody>
+      </table>
+    )
+  }
+
+  return (
+    <>
+      {loading && <PostsShimmer />}
+      {data?.publications?.items?.length === 0 && (
+        <EmptyState
+          message={
+            <div>
+              <span className="mr-1 font-bold">@{profile?.handle}</span>
+              <span>seems like not {'POST'.toLowerCase()}ed yet!</span>
+            </div>
+          }
+          icon={<CollectionIcon className="w-8 h-8 text-brand" />}
+        />
+      )}
+      <ErrorMessage title="Failed to load fundraisers" error={error} />
+      {!error && !loading && data?.publications?.items?.length !== 0 && (
+        <Card>
+          <Table />
+          {pageInfo?.next && publications.length !== pageInfo?.totalCount && (
+            <span ref={observe} className="flex justify-center p-5">
+              <Spinner size="sm" />
+            </span>
+          )}
+        </Card>
+      )}
+      {pubIdData && (
+        <>
+          {pubIdData.map((i) => {
+            return (
+              <GetComments
+                pubId={i}
+                callback={(data: any) => {
+                  data.publications.items.forEach((pub: any) => {
+                    if (pub.collectNftAddress && pub.metadata.attributes[4]) {
+                      setAddressData([...addressData, pub.id])
+                      const add: Data = {
+                        orgName: pub.metadata.attributes[2].value,
+                        name: pub.metadata.name,
+                        category: pub.metadata.attributes[5]
+                          ? pub.metadata.attributes[5].value
+                          : '',
+                        funds: pub.metadata.attributes[4].value,
+                        goal: pub.metadata.attributes[1].value,
+                        date: pub.createdAt.split('T')[0],
+                        postID: pub.commentOn.pubId
+                      }
+                      // setTableData([...tableData, add])
+                    }
+                  })
+                }}
+              />
+            )
+          })}
+        </>
+      )}
+      {/* {addressData && (
+        <>
+          {addressData.map((i) => {
+            return (
+              <NFTDetails
+                address={i}
+                callback={(data: any) => {
+                  let url = data
+                  if (data.includes('ipfs.infura.io')) {
+                    const res = data.split('/')
+                    url = 'https://bcharity.infura-ipfs.io/ipfs/' + res[4]
+                  }
+                  fetchMetadata(url).then((result) => {
+                    // console.log(result)
+                  })
+                }}
+              />
+            )
+          })}
+        </>
+      )} */}
+    </>
+  )
+}
+
+export default FundraiseTable
