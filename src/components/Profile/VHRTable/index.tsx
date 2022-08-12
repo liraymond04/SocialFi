@@ -88,9 +88,7 @@ const VHRTable: FC<Props> = ({
     args: [GIVE_DAI_LP],
 
     onSuccess(data) {
-      //console.log('Success', data)
       setBalanceOf(parseFloat(data.toString()))
-      //console.log(totalSupply);
     }
   })
 
@@ -102,9 +100,7 @@ const VHRTable: FC<Props> = ({
     args: [GIVE_DAI_LP],
 
     onSuccess(data) {
-      //console.log('Success', data)
       setBalanceOfQuote(parseFloat(data.toString()))
-      //console.log(totalSupply);
     }
   })
 
@@ -114,9 +110,7 @@ const VHRTable: FC<Props> = ({
     functionName: 'decimals',
     watch: true,
     onSuccess(data) {
-      //console.log('Success', data)
       setDecimals(parseFloat(data.toString()))
-      //console.log(totalSupply);
     }
   })
 
